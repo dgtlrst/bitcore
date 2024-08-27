@@ -8,9 +8,15 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::serial::SerialConnection;
+use crate::serial_types::SerialPortInfo;
 
 // define a mutex-protected serial connection
 pub type SharedConnection = Arc<Mutex<Option<SerialConnection>>>;
+
+/// list available ports
+pub fn list() -> io::Result<Vec<SerialPortInfo>> {
+    SerialConnection::list()
+}
 
 /// connect to a serial port
 ///

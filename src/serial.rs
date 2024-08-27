@@ -19,6 +19,24 @@ pub struct SerialConnection {
 }
 
 impl SerialConnection {
+    pub fn list() -> io::Result<Vec<SerialPortInfo>> {
+        let ports = serialport::available_ports()?;
+        let mut port_list = Vec::new();
+
+        for port in ports {
+            port_list.push(SerialPortInfo::new(
+                port.port_name,
+                9600,
+                DataBits::Eight,
+                Parity::None,
+                StopBits::One,
+                FlowControl::None,
+            ));
+        }
+
+        Ok(port_list)
+    }
+
     pub fn connect(port_name: &str, baud_rate: u32) -> io::Result<Self> {
         let port_info = SerialPortInfo::new(
             port_name.to_string(),

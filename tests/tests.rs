@@ -16,6 +16,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn list_ports() {
+        let ports = available_ports();
+
+        match ports {
+            Ok(ports) => {
+                for port in ports {
+                    eprintln!("{:?}", port);
+                }
+            }
+            Err(e) => {
+                eprintln!("error listing ports: {:?}", e);
+            }
+        }
+    }
+
+    #[test]
     fn stability_test() {
         // list available ports
         let mut port_list: Vec<SerialPortInfo> = Vec::new();
