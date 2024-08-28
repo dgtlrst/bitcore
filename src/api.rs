@@ -7,8 +7,9 @@ use std::io;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use serialport::{SerialPortBuilder, SerialPortInfo};
+
 use crate::serial::SerialConnection;
-use crate::serial_types::SerialPortInfo;
 
 // define a mutex-protected serial connection
 pub type SharedConnection = Arc<Mutex<Option<SerialConnection>>>;
@@ -21,48 +22,11 @@ pub fn list() -> io::Result<Vec<SerialPortInfo>> {
 /// connect to a serial port
 ///
 /// @param shared_conn: &SharedConnection - shared connection object
-/// @param port_name: &str - name of the port to connect to
+/// @param port: SerialPortBuilder - serial port builder object
 ///
 /// @return io::Result<()> - result of the operation
-///
-/// # Example
-///
-/// ```no_run
-/// use std::sync::{Arc, Mutex};
-/// use bitcore::api::{connect, disconnect};
-/// use bitcore::serial_types::{SerialPortInfo, DataBits, Parity, StopBits, FlowControl};
-///
-/// // create a shared connection object
-/// let connection = Arc::new(Mutex::new(None));
-///
-/// // connect
-/// assert!(connect(&connection, "/dev/ttyUSB0", 9600).is_ok());
-///
-/// // ..and disconnect
-/// assert!(disconnect(&connection).is_ok());
-/// ```
-///
-/// # Errors
-///
-/// Returns an error if the connection is already established
-///
-/// # Panics
-///
-/// Panics if the connection is already established
-///
-/// # Safety
-///
-/// This function is thread safe
-///
-/// # Notes
-///
-/// This function is a wrapper around the `connect` method of the `SerialConnection` struct
-///
-/// # See
-///
-/// `SerialConnection::connect`
-pub fn connect(shared_conn: &SharedConnection, port_name: &str, baud_rate: u32) -> io::Result<()> {
-    let conn = SerialConnection::connect(port_name, baud_rate)?;
+pub fn connect(shared_conn: &SharedConnection, port: SerialPortBuilder) -> io::Result<()> {
+    let conn = SerialConnection::connect(port)?;
     let mut conn_lock = shared_conn.lock().unwrap();
     *conn_lock = Some(conn);
     Ok(())
@@ -73,43 +37,6 @@ pub fn connect(shared_conn: &SharedConnection, port_name: &str, baud_rate: u32) 
 /// @param shared_conn: &SharedConnection - shared connection object
 ///
 /// @return io::Result<()> - result of the operation
-///
-/// # Example
-///
-/// ```no_run
-/// use std::sync::{Arc, Mutex};
-/// use bitcore::api::{connect, disconnect};
-/// use bitcore::serial_types::{SerialPortInfo, DataBits, Parity, StopBits, FlowControl};
-///
-/// // create a shared connection object
-/// let connection = Arc::new(Mutex::new(None));
-///
-/// // connect
-/// assert!(connect(&connection, "/dev/ttyUSB0", 9600).is_ok());
-///
-/// // ..and disconnect
-/// assert!(disconnect(&connection).is_ok());
-/// ```
-///
-/// # Errors
-///
-/// Returns an error if the connection is not established
-///
-/// # Panics
-///
-/// Panics if the connection is not established
-///
-/// # Safety
-///
-/// This function is thread safe
-///
-/// # Notes
-///
-/// This function is a wrapper around the `disconnect` method of the `SerialConnection` struct
-///
-/// # See
-///
-/// `SerialConnection::disconnect`
 pub fn disconnect(shared_conn: &SharedConnection) -> io::Result<()> {
     let mut conn_lock = shared_conn.lock().unwrap();
     if let Some(conn) = conn_lock.take() {
@@ -125,46 +52,6 @@ pub fn disconnect(shared_conn: &SharedConnection) -> io::Result<()> {
 /// @param data: &[u8] - data to write
 ///
 /// @return io::Result<usize> - result of the operation
-///
-/// # Example
-///
-/// ```no_run
-/// use std::sync::{Arc, Mutex};
-/// use bitcore::api::{connect, disconnect, write};
-/// use bitcore::serial_types::{SerialPortInfo, DataBits, Parity, StopBits, FlowControl};
-///
-/// // create a shared connection object
-/// let connection = Arc::new(Mutex::new(None));
-///
-/// // connect
-/// assert!(connect(&connection, "/dev/ttyUSB0", 9600).is_ok());
-///
-/// // write data
-/// assert!(write(&connection, b"hello world").is_ok());
-///
-/// // ..and disconnect
-/// assert!(disconnect(&connection).is_ok());
-/// ```
-///
-/// # Errors
-///
-/// Returns an error if the connection is not established
-///
-/// # Panics
-///
-/// Panics if the connection is not established
-///
-/// # Safety
-///
-/// This function is thread safe
-///
-/// # Notes
-///
-/// This function is a wrapper around the `write` method of the `SerialConnection` struct
-///
-/// # See
-///
-/// `SerialConnection::write`
 pub fn write(shared_conn: &SharedConnection, data: &[u8]) -> io::Result<usize> {
     let mut conn_lock = shared_conn.lock().unwrap();
     if let Some(conn) = conn_lock.as_mut() {
@@ -181,48 +68,6 @@ pub fn write(shared_conn: &SharedConnection, data: &[u8]) -> io::Result<usize> {
 /// @param timeout: Duration - read timeout
 ///
 /// @return io::Result<usize> - result of the operation
-///
-/// # Example
-///
-/// ```no_run
-/// use std::sync::{Arc, Mutex};
-/// use std::time::Duration;
-/// use bitcore::api::{connect, disconnect, read};
-/// use bitcore::serial_types::{SerialPortInfo, DataBits, Parity, StopBits, FlowControl};
-///
-/// // create a shared connection object
-/// let connection = Arc::new(Mutex::new(None));
-///
-/// // connect
-/// assert!(connect(&connection, "/dev/ttyUSB0", 9600).is_ok());
-///
-/// // read data
-/// let mut buffer = [0u8; 1024];
-/// assert!(read(&connection, &mut buffer, Duration::from_secs(5)).is_ok());
-///
-/// // ..and disconnect
-/// assert!(disconnect(&connection).is_ok());
-/// ```
-///
-/// # Errors
-///
-/// Returns an error if the connection is not established
-///
-/// # Panics
-///
-/// Panics if the connection is not established
-///
-/// # Safety
-///
-/// This function is thread safe
-///
-/// # Notes
-///
-/// This function is a wrapper around the `read` method of the `SerialConnection` struct
-///
-/// # See
-///
-/// `SerialConnection::read`
 pub fn read(
     shared_conn: &SharedConnection,
     buffer: &mut [u8],

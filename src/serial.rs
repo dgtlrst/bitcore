@@ -1,15 +1,10 @@
 // -- lower level implementation
 // handles direct interaction with the serial port
 
-use serialport::SerialPort;
+use serialport::{SerialPort, SerialPortBuilder, SerialPortInfo};
 use std::io::{self, Read, Write};
 use std::thread;
 use std::time::{Duration, Instant};
-
-use crate::serial_types::{DataBits, FlowControl, Parity, SerialPortInfo, StopBits};
-
-/// default port connection timeout
-const DEFAULT_PORT_TIMEOUT_MS: u64 = 1000;
 
 /// polling read period for the duration of a user-defined timeout
 const READ_POLL_SLEEP_MS: u64 = 100;
@@ -21,42 +16,13 @@ pub struct SerialConnection {
 impl SerialConnection {
     pub fn list() -> io::Result<Vec<SerialPortInfo>> {
         let ports = serialport::available_ports()?;
-        let mut port_list = Vec::new();
-
-        for port in ports {
-            port_list.push(SerialPortInfo::new(
-                port.port_name,
-                9600,
-                DataBits::Eight,
-                Parity::None,
-                StopBits::One,
-                FlowControl::None,
-            ));
-        }
-
-        Ok(port_list)
+        Ok(ports)
     }
 
-    pub fn connect(port_name: &str, baud_rate: u32) -> io::Result<Self> {
-        let port_info = SerialPortInfo::new(
-            port_name.to_string(),
-            baud_rate,
-            DataBits::Eight,
-            Parity::None,
-            StopBits::One,
-            FlowControl::None,
-        );
-
-        let mut port = serialport::new(port_name, baud_rate)
-            .timeout(Duration::from_millis(DEFAULT_PORT_TIMEOUT_MS))
-            .data_bits(port_info.data_bits.into())
-            .parity(port_info.parity.into())
-            .stop_bits(port_info.stop_bits.into())
-            .flow_control(port_info.flow_control.into())
-            .open()?;
+    pub fn connect(spbuild: SerialPortBuilder) -> io::Result<Self> {
+        let mut port = spbuild.open()?;
 
         port.flush()?; // flush to ensure buffer emptiness before writing
-
         Ok(Self { port })
     }
 

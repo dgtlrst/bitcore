@@ -1,8 +1,7 @@
 // -- crate tests
 
 use bitcore::api::{connect, disconnect, read, write};
-use bitcore::serial_types::{DataBits, FlowControl, Parity, SerialPortInfo, StopBits};
-use serialport::available_ports;
+use serialport::{available_ports, DataBits, FlowControl, Parity, SerialPortInfo, StopBits};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -34,45 +33,36 @@ mod tests {
     #[test]
     fn stability_test() {
         // list available ports
-        let mut port_list: Vec<SerialPortInfo> = Vec::new();
         let ports = available_ports();
 
-        match ports {
+        let ports_list: Vec<SerialPortInfo> = match ports {
             Ok(ports) => {
-                for port in ports {
-                    port_list.push(SerialPortInfo::new(
-                        port.port_name,
-                        TEST_BAUD_RATE,
-                        DataBits::Eight,
-                        Parity::None,
-                        StopBits::One,
-                        FlowControl::None,
-                    ));
+                eprintln!("found {} serial ports..", ports.len());
+                for port in &ports {
+                    eprintln!("{:?}", port);
                 }
+                ports
             }
             Err(e) => {
                 eprintln!("error listing ports: {:?}", e);
+                panic!("no available ports found");
             }
-        }
-
-        if port_list.is_empty() {
-            eprintln!("no serial ports found");
-            return;
-        } else {
-            eprintln!("found {} serial ports..", port_list.len());
-            for port in &port_list {
-                eprintln!("{:?}", port.to_json().unwrap());
-            }
-        }
+        };
 
         // take port
-        let port = &port_list[PORT_INDEX];
+        let port = &ports_list[PORT_INDEX];
 
         // create a shared connection object
         let connection = Arc::new(Mutex::new(None));
 
         // connect
-        assert!(connect(&connection, &port.name, port.speed).is_ok());
+        let port_builder = serialport::new(port.port_name.as_str(), TEST_BAUD_RATE)
+            .data_bits(DataBits::Eight)
+            .flow_control(FlowControl::None)
+            .parity(Parity::None)
+            .stop_bits(StopBits::One);
+
+        assert!(connect(&connection, port_builder).is_ok());
 
         // some test vars
         let test_duration = Duration::from_secs(5); // 1 minute
