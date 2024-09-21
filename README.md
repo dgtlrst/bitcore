@@ -34,3 +34,4 @@ currently used for [**bit**](https://github.com/dgtlrst/bit) backend
   - tech:
     - buffered write/read
     - connection validation ('heart beat')
+    - extend api with an action loop default implementation (callable by UI)
