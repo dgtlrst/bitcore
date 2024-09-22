@@ -81,7 +81,7 @@ mod tests {
             let rx_status;
 
             // transmit
-            if write(&connection, write_data).is_ok() {
+            if write(&connection, write_data, 1).is_ok() {
                 tx_status = "✓";
             } else {
                 tx_status = "✗";
